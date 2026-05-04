@@ -1,22 +1,34 @@
-const statusEntries = new Map();
+const credentialsByIndex = new Map();
 
-function allocateStatus(credentialId) {
-  const index = String(statusEntries.size);
-  statusEntries.set(index, { credentialId, revoked: false });
+function registerCredential(credentialId) {
+  const index = String(credentialsByIndex.size);
+  credentialsByIndex.set(index, { credentialId, revoked: false, statusPurpose: 'revocation' });
   return index;
 }
 
-function revokeStatusByCredentialId(credentialId) {
-  for (const [index, item] of statusEntries.entries()) {
-    if (item.credentialId === credentialId) {
-      statusEntries.set(index, { ...item, revoked: true, revokedAt: new Date().toISOString() });
-      return index;
+function revokeCredential(credentialId) {
+  for (const [index, record] of credentialsByIndex.entries()) {
+    if (record.credentialId === credentialId) {
+      credentialsByIndex.set(index, { ...record, revoked: true, revokedAt: new Date().toISOString() });
+      return { found: true, index };
     }
   }
-  return null;
+  return { found: false };
 }
 
-function getStatusByIndex(index) { return statusEntries.get(index); }
-function snapshot() { return Object.fromEntries(statusEntries); }
+function getStatusListCredential(baseUrl, listId = 'default') {
+  return {
+    '@context': ['https://www.w3.org/2018/credentials/v1', 'https://w3id.org/vc/status-list/2021/v1'],
+    id: `${baseUrl}/${listId}`,
+    type: ['VerifiableCredential', 'StatusList2021Credential'],
+    issuer: process.env.ISSUER_ID,
+    issuanceDate: new Date().toISOString(),
+    credentialSubject: {
+      id: `${baseUrl}/${listId}#list`,
+      type: 'StatusList2021',
+      entries: Object.fromEntries(credentialsByIndex)
+    }
+  };
+}
 
-module.exports = { allocateStatus, revokeStatusByCredentialId, getStatusByIndex, snapshot };
+module.exports = { registerCredential, revokeCredential, getStatusListCredential };

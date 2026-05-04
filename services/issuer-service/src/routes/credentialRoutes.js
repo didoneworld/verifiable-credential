@@ -6,19 +6,16 @@ function createCredentialRouter(config) {
 
   router.post('/v1/credentials/issue', async (req, res, next) => {
     try {
-      const result = await issue(req.body, config);
-      res.status(201).json(result);
-    } catch (e) { next(e); }
+      if (!req.body?.credentialSubject) return res.status(400).json({ error: 'credentialSubject is required.' });
+      const vc = await issue(req.body, config);
+      return res.status(201).json({ vc });
+    } catch (error) { return next(error); }
   });
 
-  router.post('/v1/credentials/revoke', async (req, res, next) => {
-    try { res.json(revoke(req.body.id)); } catch (e) { next(e); }
-  });
-
-  router.get('/v1/status-lists/:id', async (req, res, next) => {
-    try { res.json(getStatusList(req.params.id)); } catch (e) { next(e); }
-  });
+  router.post('/v1/credentials/revoke', (req, res) => res.json(revoke(req.body?.id)));
+  router.get('/v1/status-lists/:id', (req, res) => res.json(getStatusList(config.statusListBaseUrl, req.params.id)));
 
   return router;
 }
+
 module.exports = { createCredentialRouter };

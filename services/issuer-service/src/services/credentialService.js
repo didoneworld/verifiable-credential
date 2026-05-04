@@ -1,12 +1,15 @@
-const { v4: uuidv4 } = require('uuid');
+const { randomUUID } = require('crypto');
 const { issueCredential, buildKeyPairFromMultibase } = require('@vc-platform/vc-core');
-const { allocateStatus, revokeStatusByCredentialId, snapshot } = require('./statusListStore');
+const { registerCredential, revokeCredential, getStatusListCredential } = require('./statusListStore');
 
-function buildUnsignedCredential(payload, config, statusListIndex) {
-  return {
+async function issue(payload, config) {
+  const credentialId = `urn:uuid:${randomUUID()}`;
+  const statusListIndex = registerCredential(credentialId);
+
+  const credential = {
     '@context': ['https://www.w3.org/2018/credentials/v1', 'https://w3id.org/vc/status-list/2021/v1'],
-    id: `urn:uuid:${uuidv4()}`,
-    type: ['VerifiableCredential', ...payload.type],
+    id: credentialId,
+    type: ['VerifiableCredential', ...(payload.type || ['GenericCredential'])],
     issuer: config.issuerId,
     issuanceDate: new Date().toISOString(),
     credentialSubject: payload.credentialSubject,
@@ -18,30 +21,19 @@ function buildUnsignedCredential(payload, config, statusListIndex) {
       statusListCredential: `${config.statusListBaseUrl}/default`
     }
   };
-}
 
-async function issue(payload, config) {
-  const statusListIndex = allocateStatus('pending');
-  const credential = buildUnsignedCredential(payload, config, statusListIndex);
   const keyPair = buildKeyPairFromMultibase(config.keyMaterial);
-  const signed = await issueCredential({ credential, keyPair, documentLoader: config.documentLoader });
-  revokeStatusByCredentialId('pending');
-  return signed;
+  return issueCredential({ credential, keyPair });
 }
 
 function revoke(credentialId) {
-  const index = revokeStatusByCredentialId(credentialId);
-  if (index === null) return { revoked: false, reason: 'Credential not found in status list.' };
-  return { revoked: true, credentialId, statusListIndex: index };
+  const result = revokeCredential(credentialId);
+  if (!result.found) return { revoked: false, reason: 'Credential not found.' };
+  return { revoked: true, credentialId, statusListIndex: result.index };
 }
 
-function getStatusList(listId) {
-  return {
-    id: `${process.env.STATUS_LIST_BASE_URL || ''}/${listId}`,
-    type: ['VerifiableCredential', 'StatusList2021Credential'],
-    statusPurpose: 'revocation',
-    entries: snapshot()
-  };
+function getStatusList(baseUrl, listId) {
+  return getStatusListCredential(baseUrl, listId);
 }
 
 module.exports = { issue, revoke, getStatusList };

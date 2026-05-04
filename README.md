@@ -1,23 +1,27 @@
-# VC Platform (W3C-Aligned Foundation)
+# VC Platform (W3C VC Data Integrity Baseline)
 
-This monorepo now replaces raw JSON signatures with a W3C-aligned flow using `@digitalbazaar/vc`, Ed25519Signature2020 suites, JSON-LD contexts, DID-based issuer identifiers, and StatusList2021-style revocation metadata.
+This repository now uses a W3C-aligned VC stack powered by Digital Bazaar libraries.
 
-## What changed
-- Replaced manual `tweetnacl` signing with `@digitalbazaar/vc` issue/verify APIs.
-- Added `did:key` + `did:web` resolution support in `packages/did-client`.
-- Added StatusList2021 credential status shape during issuance and verifier status checks.
-- Added VP verification endpoint with `challenge` and `domain` matching.
+## Core upgrades
+- Replaced manual signing flow with `@digitalbazaar/vc` issue/verify.
+- Added shared `documentLoader` in `packages/vc-core/documentLoader.js`.
+- DID support includes `did:key` (default via loader) and `did:web` in `did-client`.
+- Issuer now emits VC with `StatusList2021Entry` metadata.
+- Verifier checks linked-data proofs and status-list revocation.
+- VP endpoint validates `challenge` and `domain`.
 
-## Services
-- issuer-service: `POST /v1/credentials/issue`, `POST /v1/credentials/revoke`, `GET /v1/status-lists/:id`
-- verifier-service: `POST /v1/credentials/verify`, `POST /v1/presentations/verify`
+## Endpoints
+- Issuer: `POST /v1/credentials/issue`, `POST /v1/credentials/revoke`, `GET /v1/status-lists/:id`
+- Verifier: `POST /v1/credentials/verify`, `POST /v1/presentations/verify`
 
 ## Run
-1. `cp .env.example .env`
-2. Populate DID + multibase keys
-3. `docker-compose up --build`
+```bash
+cp .env.example .env
+docker-compose up --build
+```
 
-## Limitations
-- OID4VCI / OID4VP are not fully implemented yet; current endpoints provide stepping stones.
-- Status list is in-memory and represented as a credential-like resource for migration to full StatusList2021 bitstring encoding.
-- DID:web trust policy and allowlisting is minimal and should be expanded before production.
+## Next production steps
+- Full StatusList2021 bitstring encoding.
+- OID4VCI / OID4VP protocol endpoints.
+- KMS/HSM-backed key operations.
+- Trust registry and DID:web policy hardening.
