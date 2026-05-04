@@ -1,0 +1,15 @@
+openapi: 3.0.3
+info:
+  title: VC Platform API
+  version: 2.1.0
+paths:
+  /v1/credentials/issue:
+    post: { summary: Issue W3C VC, description: Accepts credentialSubject and optional type; returns vc }
+  /v1/credentials/revoke:
+    post: { summary: Revoke VC using StatusList2021 index mapping }
+  /v1/status-lists/{id}:
+    get: { summary: Fetch status list credential resource }
+  /v1/credentials/verify:
+    post: { summary: Verify W3C VC linked-data proof and revocation status }
+  /v1/presentations/verify:
+    post: { summary: Verify VP envelope challenge/domain and contained VCs }
