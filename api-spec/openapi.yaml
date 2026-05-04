@@ -1,0 +1,61 @@
+openapi: 3.0.3
+info:
+  title: VC Platform API
+  version: 1.0.0
+servers:
+  - url: http://localhost:4001
+    description: Issuer service
+  - url: http://localhost:4002
+    description: Verifier service
+paths:
+  /v1/credentials/issue:
+    post:
+      summary: Issue a verifiable credential
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [type, credentialSubject]
+              properties:
+                type:
+                  type: array
+                  items: { type: string }
+                credentialSubject:
+                  type: object
+      responses:
+        '201':
+          description: Credential issued
+  /v1/credentials/revoke:
+    post:
+      summary: Revoke a credential
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [id]
+              properties:
+                id:
+                  type: string
+      responses:
+        '200':
+          description: Credential revoked
+  /v1/credentials/verify:
+    post:
+      summary: Verify a verifiable credential
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [credential]
+              properties:
+                credential:
+                  type: object
+      responses:
+        '200':
+          description: Verification result
