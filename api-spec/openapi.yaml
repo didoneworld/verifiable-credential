@@ -2,6 +2,11 @@ openapi: 3.0.3
 info:
   title: VC Platform API
   version: 2.1.0
+servers:
+  - url: http://localhost:4001
+    description: Issuer service
+  - url: http://localhost:4002
+    description: Verifier service
 paths:
   /v1/credentials/issue:
     post: { summary: Issue W3C VC, description: Accepts credentialSubject and optional type; returns vc }
