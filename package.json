@@ -1,0 +1,15 @@
+{
+  "name": "vc-platform",
+  "version": "2.0.0",
+  "private": true,
+  "workspaces": [
+    "services/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "start:issuer": "npm --workspace issuer-service run dev",
+    "start:verifier": "npm --workspace verifier-service run dev",
+    "start:did-resolver": "npm --workspace did-resolver run dev",
+    "start:revocation": "npm --workspace revocation-service run dev"
+  }
+}

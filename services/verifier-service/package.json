@@ -1,0 +1,12 @@
+{
+  "name": "verifier-service",
+  "version": "2.0.0",
+  "main": "src/server.js",
+  "scripts": {"start":"node src/server.js","dev":"node src/server.js"},
+  "dependencies": {
+    "@vc-platform/config": "1.0.0",
+    "@vc-platform/vc-core": "2.0.0",
+    "axios": "^1.7.2",
+    "express": "^4.19.2"
+  }
+}
