@@ -1,23 +1,27 @@
 const express = require('express');
-const { validateVerifyPayload } = require('../utils/validation');
-const { verifyCredential } = require('../services/verificationService');
+const { verifyVc, verifyVpEnvelope } = require('../services/verificationService');
 
-function createVerificationRouter(config) {
+function createVerificationRouter() {
   const router = express.Router();
 
   router.post('/v1/credentials/verify', async (req, res, next) => {
     try {
-      const validationError = validateVerifyPayload(req.body);
-      if (validationError) return res.status(400).json({ valid: false, reason: validationError });
+      const credential = req.body?.vc || req.body?.credential;
+      if (!credential) return res.status(400).json({ valid: false, reason: 'vc is required.' });
+      return res.json(await verifyVc(credential));
+    } catch (error) { return next(error); }
+  });
 
-      const result = await verifyCredential(req.body.credential, config);
-      return res.json(result);
-    } catch (error) {
-      if (error.response?.status === 404) {
-        return res.status(400).json({ valid: false, reason: 'Credential status unavailable.' });
+  router.post('/v1/presentations/verify', async (req, res, next) => {
+    try {
+      const envelopeError = verifyVpEnvelope(req.body);
+      if (envelopeError) return res.status(400).json({ valid: false, reason: envelopeError });
+      for (const credential of req.body.presentation.verifiableCredential || []) {
+        const result = await verifyVc(credential);
+        if (!result.valid) return res.status(400).json(result);
       }
-      return next(error);
-    }
+      return res.json({ valid: true });
+    } catch (error) { return next(error); }
   });
 
   return router;

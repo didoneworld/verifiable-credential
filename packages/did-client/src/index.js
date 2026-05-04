@@ -1,28 +1,25 @@
-function parseDidMap(rawMap) {
-  if (!rawMap) return {};
+const { driver } = require('@digitalbazaar/did-method-key');
+const axios = require('axios');
 
-  try {
-    return JSON.parse(rawMap);
-  } catch (error) {
-    throw new Error('DID_PUBLIC_KEY_MAP must be a valid JSON object string.');
-  }
+const didKeyDriver = driver();
+
+async function resolveDidKey(did) {
+  return didKeyDriver.get({ did });
 }
 
-async function resolve(did, options = {}) {
-  const didMap = options.didMap || parseDidMap(process.env.DID_PUBLIC_KEY_MAP);
-  const resolvedPublicKey = didMap[did] || process.env.ISSUER_PUBLIC_KEY_BASE64;
-
-  if (!resolvedPublicKey) {
-    throw new Error(`No public key found for DID: ${did}`);
-  }
-
-  return {
-    did,
-    publicKeyBase64: resolvedPublicKey,
-    source: didMap[did] ? 'did-map' : 'fallback-env'
-  };
+async function resolveDidWeb(did) {
+  const didPath = did.replace('did:web:', '').split(':');
+  const domain = didPath.shift();
+  const path = didPath.length ? `/${didPath.join('/')}` : '';
+  const url = `https://${domain}${path}/did.json`;
+  const { data } = await axios.get(url, { timeout: 5000 });
+  return data;
 }
 
-module.exports = {
-  resolve
-};
+async function resolve(did) {
+  if (did.startsWith('did:key:')) return resolveDidKey(did);
+  if (did.startsWith('did:web:')) return resolveDidWeb(did);
+  throw new Error(`Unsupported DID method for ${did}`);
+}
+
+module.exports = { resolve };

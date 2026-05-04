@@ -1,45 +1,39 @@
-const { v4: uuidv4 } = require('uuid');
-const { sign } = require('@vc-platform/vc-core');
-const { revokeCredential, getRevocationStatus } = require('./revocationStore');
+const { randomUUID } = require('crypto');
+const { issueCredential, buildKeyPairFromMultibase } = require('@vc-platform/vc-core');
+const { registerCredential, revokeCredential, getStatusListCredential } = require('./statusListStore');
 
-function buildCredential({ issuer, type, credentialSubject }) {
-  return {
-    '@context': ['https://www.w3.org/2018/credentials/v1'],
-    id: uuidv4(),
-    type: ['VerifiableCredential', ...type],
-    issuer,
-    issuanceDate: new Date().toISOString(),
-    credentialSubject
-  };
-}
+async function issue(payload, config) {
+  const credentialId = `urn:uuid:${randomUUID()}`;
+  const statusListIndex = registerCredential(credentialId);
 
-async function issueCredential(payload, config) {
-  const vc = buildCredential({
+  const credential = {
+    '@context': ['https://www.w3.org/2018/credentials/v1', 'https://w3id.org/vc/status-list/2021/v1'],
+    id: credentialId,
+    type: ['VerifiableCredential', ...(payload.type || ['GenericCredential'])],
     issuer: config.issuerId,
-    type: payload.type,
-    credentialSubject: payload.credentialSubject
-  });
-
-  const jws = sign(vc, config.privateKeyBase64);
-
-  return {
-    ...vc,
-    proof: {
-      type: 'Ed25519Signature2020',
-      created: new Date().toISOString(),
-      proofPurpose: 'assertionMethod',
-      jws
+    issuanceDate: new Date().toISOString(),
+    credentialSubject: payload.credentialSubject,
+    credentialStatus: {
+      id: `${config.statusListBaseUrl}/default#${statusListIndex}`,
+      type: 'StatusList2021Entry',
+      statusPurpose: 'revocation',
+      statusListIndex,
+      statusListCredential: `${config.statusListBaseUrl}/default`
     }
   };
+
+  const keyPair = buildKeyPairFromMultibase(config.keyMaterial);
+  return issueCredential({ credential, keyPair });
 }
 
-async function revoke(credentialId) {
-  revokeCredential(credentialId);
-  return { id: credentialId, revoked: true };
+function revoke(credentialId) {
+  const result = revokeCredential(credentialId);
+  if (!result.found) return { revoked: false, reason: 'Credential not found.' };
+  return { revoked: true, credentialId, statusListIndex: result.index };
 }
 
-async function getRevocation(id) {
-  return { id, ...getRevocationStatus(id) };
+function getStatusList(baseUrl, listId) {
+  return getStatusListCredential(baseUrl, listId);
 }
 
-module.exports = { issueCredential, revoke, getRevocation };
+module.exports = { issue, revoke, getStatusList };

@@ -1,41 +1,19 @@
 const express = require('express');
-const { validateIssuePayload } = require('../utils/validation');
-const { issueCredential, revoke, getRevocation } = require('../services/credentialService');
+const { issue, revoke, getStatusList } = require('../services/credentialService');
 
 function createCredentialRouter(config) {
   const router = express.Router();
 
   router.post('/v1/credentials/issue', async (req, res, next) => {
     try {
-      const validationError = validateIssuePayload(req.body);
-      if (validationError) return res.status(400).json({ error: validationError });
-
-      const credential = await issueCredential(req.body, config);
-      return res.status(201).json(credential);
-    } catch (error) {
-      return next(error);
-    }
+      if (!req.body?.credentialSubject) return res.status(400).json({ error: 'credentialSubject is required.' });
+      const vc = await issue(req.body, config);
+      return res.status(201).json({ vc });
+    } catch (error) { return next(error); }
   });
 
-  router.post('/v1/credentials/revoke', async (req, res, next) => {
-    try {
-      const { id } = req.body || {};
-      if (!id) return res.status(400).json({ error: 'id is required.' });
-      const result = await revoke(id);
-      return res.json(result);
-    } catch (error) {
-      return next(error);
-    }
-  });
-
-  router.get('/v1/revocation/:id', async (req, res, next) => {
-    try {
-      const status = await getRevocation(req.params.id);
-      return res.json(status);
-    } catch (error) {
-      return next(error);
-    }
-  });
+  router.post('/v1/credentials/revoke', (req, res) => res.json(revoke(req.body?.id)));
+  router.get('/v1/status-lists/:id', (req, res) => res.json(getStatusList(config.statusListBaseUrl, req.params.id)));
 
   return router;
 }

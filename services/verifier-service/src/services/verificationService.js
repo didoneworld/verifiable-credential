@@ -1,23 +1,25 @@
 const axios = require('axios');
-const { verify } = require('@vc-platform/vc-core');
-const { resolve } = require('@vc-platform/did-client');
+const { verifyCredential } = require('@vc-platform/vc-core');
 
-async function verifyCredential(credential, config) {
-  const { proof, ...unsignedCredential } = credential;
+async function verifyVc(credential) {
+  const result = await verifyCredential({ credential });
+  if (!result.verified) return { valid: false, reason: 'Verification failed', details: result };
 
-  const didDocument = await resolve(unsignedCredential.issuer);
-  const signatureValid = verify(unsignedCredential, proof.jws, didDocument.publicKeyBase64);
-  if (!signatureValid) {
-    return { valid: false, reason: 'Invalid credential signature.' };
-  }
-
-  const revocationUrl = `${config.issuerBaseUrl}/v1/revocation/${encodeURIComponent(unsignedCredential.id)}`;
-  const { data: revocationStatus } = await axios.get(revocationUrl, { timeout: 3000 });
-  if (revocationStatus.revoked) {
-    return { valid: false, reason: 'Credential has been revoked.' };
+  const status = credential.credentialStatus;
+  if (status?.statusListCredential && status.statusListIndex) {
+    const { data } = await axios.get(status.statusListCredential, { timeout: 5000 });
+    const entry = data?.credentialSubject?.entries?.[status.statusListIndex];
+    if (entry?.revoked) return { valid: false, reason: 'Credential revoked.' };
   }
 
   return { valid: true };
 }
 
-module.exports = { verifyCredential };
+function verifyVpEnvelope({ presentation, challenge, domain }) {
+  if (!presentation?.proof) return 'Presentation proof is required.';
+  if (presentation.proof.challenge !== challenge) return 'Challenge mismatch.';
+  if (presentation.proof.domain !== domain) return 'Domain mismatch.';
+  return null;
+}
+
+module.exports = { verifyVc, verifyVpEnvelope };
