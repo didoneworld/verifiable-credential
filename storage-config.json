@@ -1,0 +1,10 @@
+{
+  "provider": "nextcloud",
+  "endpoint": "work-1-oziqncwhvinsxsug.prod-runtime.all-hands.dev",
+  "bucket": "waltid-credentials",
+  "access_key": "",
+  "secret_key": "",
+  "nextcloud_url": "https://work-1-oziqncwhvinsxsug.prod-runtime.all-hands.dev",
+  "nextcloud_port": "12000",
+  "webdav_url": "https://work-1-oziqncwhvinsxsug.prod-runtime.all-hands.dev/remote.php/dav/files/"
+}
