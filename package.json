@@ -7,9 +7,24 @@
     "packages/*"
   ],
   "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
     "start:issuer": "npm --workspace issuer-service run dev",
     "start:verifier": "npm --workspace verifier-service run dev",
     "start:did-resolver": "npm --workspace did-resolver run dev",
     "start:revocation": "npm --workspace revocation-service run dev"
+  },
+  "dependencies": {
+    "@next/font": "latest",
+    "next": "latest",
+    "react": "latest",
+    "react-dom": "latest"
+  },
+  "devDependencies": {
+    "@types/node": "latest",
+    "@types/react": "latest",
+    "@types/react-dom": "latest",
+    "typescript": "latest"
   }
 }
