@@ -25,3 +25,53 @@ docker-compose up --build
 - OID4VCI / OID4VP protocol endpoints.
 - KMS/HSM-backed key operations.
 - Trust registry and DID:web policy hardening.
+
+---
+## Platform Integration
+
+This repository is a standalone component of the DID One World unified identity platform.
+
+### Platform Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│            DID One World Platform                  │
+├─────────────────────────────────────────────────┤
+│  idwallet     →  Agent-DID  →  verifiable-cred │
+│  (Wallet)       (Identity)     (Credentials)    │
+└─────────────────────────────────────────────┘
+```
+
+### Component Role
+
+| Component | Provides |
+|-----------|----------|
+| **Agent-DID** | Agent identity registry, lifecycle management, blueprints |
+| **verifiable-credential** (this repo) | Credential issuance, verification, revocation |
+| **idwallet** | User wallet, credential storage, presentation |
+
+### Standalone Usage
+
+This repo can be run independently:
+
+```bash
+cp .env.example .env
+docker-compose up --build
+```
+
+### API Endpoints
+
+| Endpoint | Description |
+|----------|-------------|
+| `POST /v1/credentials/issue` | Issue credential |
+| `POST /v1/credentials/verify` | Verify credential |
+| `POST /v1/credentials/revoke` | Revoke credential |
+| `POST /v1/presentations/verify` | Verify presentation |
+| `GET /v1/status-lists/:id` | Get status list |
+
+### Integration Points
+
+When integrated with platform:
+- Agent identity from `Agent-DID` repo
+- Wallet from `idwallet` repo
+- Full platform at [didoneworld/platform](https://github.com/didoneworld/platform)
